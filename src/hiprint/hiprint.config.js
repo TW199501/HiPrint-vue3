@@ -456,6 +456,7 @@
       default: {
         width: 120,
         height: 9.75,
+        fontFamily: 'DFKai-SB',
         // barAutoWidth: 'true' 这里必须使用字符串
       }
     },
@@ -865,7 +866,8 @@
       ],
       default: {
         height: 42,
-        width: 550
+        width: 550,
+        fontFamily: 'DFKai-SB'
       }
     },
     table: {
