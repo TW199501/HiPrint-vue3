@@ -276,23 +276,14 @@ table.hiprint-printElement-tableTarget {
   border: 0.75pt solid #000;
 }
 
-.hiprint-text-content-middle {
-}
-
 .hiprint-text-content-middle > div {
   display: grid;
   align-items: center;
 }
 
-.hiprint-text-content-bottom {
-}
-
 .hiprint-text-content-bottom > div {
   display: grid;
   align-items: flex-end;
-}
-
-.hiprint-text-content-wrap {
 }
 
 .hiprint-text-content-wrap .hiprint-text-content-wrap-nowrap {
