@@ -9022,6 +9022,55 @@ var hiprint = function (t) {
             });
           }
           this.updateTargetText(this.designTarget, this.getTitle(), t);
+
+          // 自動寬度：僅在設計模式、文字型別為 text，且仍為預設寬度時，隨文字變長而加長盒子寬度（只變大不變小）
+          try {
+            if (this.designTarget.hasClass("design") && this.options && typeof this.options.getTextType === "function" && this.options.getTextType() === "text") {
+              var defaultWidth = p.a && p.a.instance && p.a.instance.text && p.a.instance.text.default && p.a.instance.text.default.width ? p.a.instance.text.default.width : 120;
+              var currentWidth = Number(this.options.width);
+              if (!isNaN(currentWidth) && Number(currentWidth) === Number(defaultWidth)) {
+                var contentEl = this.designTarget.find(".hiprint-printElement-text-content");
+                if (contentEl && contentEl.length && contentEl[0]) {
+                  var contentDom = contentEl[0];
+                  var scrollWidth = contentDom.scrollWidth || contentDom.offsetWidth;
+                  if (scrollWidth) {
+                    var textWidthPt = hinnn.px.toPt(scrollWidth);
+                    var paddingPt = 8;
+                    var autoWidth = Math.ceil(textWidthPt + paddingPt);
+                    if (!isNaN(autoWidth) && autoWidth > currentWidth) {
+                      this.options.width = autoWidth;
+                      this.updateTargetSize(this.designTarget);
+                      // 重新更新 size-box 顯示
+                      style = this.designTarget[0] && this.designTarget[0].style;
+                      if (sizeBox && sizeBox.length && style && style.width && style.height) {
+                        sizeBox.text(style.width + " x " + style.height);
+                        sizeBox.css("top", -(sizeBox.outerHeight() || 20));
+                      }
+                      // 同步右側 widthHeight 欄位
+                      if (optionTabs && optionTabs.length) {
+                        var self2 = this;
+                        optionTabs.forEach(function (tab) {
+                          if (tab.list && tab.list.length) {
+                            tab.list.forEach(function (item) {
+                              if (item.name === "widthHeight" && item.target) {
+                                var inputs2 = item.target.find("input");
+                                if (inputs2 && inputs2.length >= 2) {
+                                  inputs2.eq(0).val(self2.options.width);
+                                  inputs2.eq(1).val(self2.options.height);
+                                }
+                              }
+                            });
+                          }
+                        });
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } catch (ex) {
+            console && console.log && console.log("auto width for text error", ex);
+          }
         }
       }, e.prototype.getConfigOptions = function () {
         return p.a.instance.text;
@@ -10502,10 +10551,21 @@ var hiprint = function (t) {
             }
           });
         }
-        var a = $(`<button class="hiprint-option-item-settingBtn hiprint-option-item-submitBtn"\n        type="button">${i18n.__('确定')}</button>`),
-          p = $(`<button  class="hiprint-option-item-settingBtn hiprint-option-item-deleteBtn"\n        type="button">${i18n.__('删除')}</button>`);
+        var a = $(`<button class="hiprint-option-item-settingBtn hiprint-option-item-submitBtn"\n+        type="button">${i18n.__('确定')}</button>`),
+          isLockedInit = !!(i.options && (i.options.fixed === true || i.options.draggable === false)),
+          lockLabelInit = isLockedInit
+            ? `🔓 ${i18n.__('解鎖位置')}`
+            : `🔒 ${i18n.__('鎖定位置')}`,
+          lockToggleBtn = $(`<button class="hiprint-option-item-settingBtn hiprint-option-item-lockToggleBtn"\n+        type="button">${lockLabelInit}</button>`),
+          p = $(`<button  class="hiprint-option-item-settingBtn hiprint-option-item-deleteBtn"\n+        type="button">${i18n.__('删除')}</button>`);
+        // 第一行：確定 / 刪除
         r.append(a);
-        i.options.draggable != false && r.append(p); // draggable 为 false 时不显示参数面板 删除 按钮
+        // draggable 为 false 时不显示参数面板 删除 按钮
+        if (i.options.draggable != false) {
+          r.append(p);
+        }
+        // 第二行：鎖定位置 / 解鎖位置（長按鈕）
+        r.append(lockToggleBtn);
         if (tabs.length) {
           r.on('click', '.prop-tab-item', function () {
             var $li = $(this);
@@ -10526,7 +10586,59 @@ var hiprint = function (t) {
         }
         a.bind("click.submitOption", function () {
           i.submitOption();
-        }), p.bind("click.deleteBtn", function () {
+        }), lockToggleBtn && lockToggleBtn.bind("click.lockToggleBtn", function () {
+          try {
+            var nowLocked = !!(i.options && (i.options.fixed === true || i.options.draggable === false));
+            var nextLocked = !nowLocked;
+            var nextDraggable = !nextLocked;
+            var nextFixed = nextLocked;
+
+            i.options.draggable = nextDraggable;
+            i.options.fixed = nextFixed;
+
+            // 通知 hiprint 內建邏輯（不觸發事件）
+            if (typeof i.updateOption === 'function') {
+              try {
+                i.updateOption('fixed', nextFixed, true);
+              } catch (e) {}
+            }
+
+            // 更新拖拽狀態
+            try {
+              i.designTarget && i.designTarget.hidraggable && i.designTarget.hidraggable('update', { draggable: nextDraggable });
+            } catch (e) {}
+
+            // 更新鎖定徽章樣式
+            try {
+              var $resizePanel = i.designTarget && i.designTarget.find('.resize-panel');
+              if ($resizePanel && $resizePanel.length) {
+                var $badge = $resizePanel.find('.hiprint-lock-badge');
+                if (nextLocked) {
+                  $resizePanel.addClass('locked');
+                  if (!$badge.length) {
+                    var badge = $('<div class="hiprint-lock-badge">🔒</div>');
+                    $resizePanel.append(badge);
+                  }
+                } else {
+                  $resizePanel.removeClass('locked');
+                  if ($badge.length) {
+                    $badge.remove();
+                  }
+                }
+              }
+            } catch (e) {}
+
+            // 更新按鈕文字
+            try {
+              var label = nextLocked
+                ? `🔓 ${i18n.__('解鎖位置')}`
+                : `🔒 ${i18n.__('鎖定位置')}`;
+              lockToggleBtn.html(label);
+            } catch (e) {}
+          } catch (e) {
+            console && console.log && console.log('lockToggleBtn click error', e);
+          }
+        }), p && p.bind("click.deleteBtn", function () {
           hinnn.event.trigger("hiprintTemplateDataChanged_" + i.templateId, "删除");
           n.printTemplate.deletePrintElement(i);
           e.clearSettingContainer();

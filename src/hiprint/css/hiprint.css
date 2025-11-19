@@ -424,6 +424,10 @@ font-weight: normal;*/
     height: 19pt;
 }
 
+.hiprint-option-items .hiprint-option-item-field select.auto-submit {
+    width: calc(100% - 8px);
+}
+
 .hiprint-option-item-settingBtn {
     height: 19pt;
     line-height: 19pt;
@@ -442,8 +446,54 @@ font-weight: normal;*/
     transform: translateZ(0);
 }
 
+/* 右側屬性面板：確定 / 刪除 各佔一欄，與上面兩欄對齊 */
+.prop-tabs>.hiprint-option-item-submitBtn,
+.prop-tabs>.hiprint-option-item-deleteBtn {
+  box-sizing: border-box;
+  display: inline-block;
+  width: calc(50% - 18px);
+  margin: 6px 8px 0;
+}
+
 .hiprint-option-item-deleteBtn {
     background: red;
+}
+
+.hiprint-option-item-settingBtn:hover {
+    background: #00a8c5;
+}
+
+.hiprint-option-item-settingBtn:active {
+    background: #008ca8;
+    transform: translateY(1px);
+}
+
+.hiprint-option-item-deleteBtn:hover {
+    background: #ff4d4f;
+}
+
+.hiprint-option-item-deleteBtn:active {
+    background: #d9363e;
+}
+
+/* 右側屬性面板：鎖定位置 / 解鎖位置 長按鈕 */
+.hiprint-option-item-lockToggleBtn {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    background: #ffffff;
+    color: #333333;
+    border: 1px dashed #999999;
+}
+
+.hiprint-option-item-lockToggleBtn:hover {
+    background: #fff7e6;
+    border-color: #fa8c16;
+    color: #d46b08;
+}
+
+.hiprint-option-item-lockToggleBtn:active {
+    background: #ffe7ba;
 }
 
 .hiprint-option-items .minicolors {
