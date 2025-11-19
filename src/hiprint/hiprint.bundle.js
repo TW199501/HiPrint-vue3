@@ -866,6 +866,16 @@ var hiprint = function (t) {
                     var n = e.getValue(),
                       r = 'textType' == e.name && ele.options[e.name] !== n,
                       a = 'axis' == e.name && ele.options[e.name] !== n;
+
+                    if (e.name === 'fontSize' && ele.printElementType && (ele.printElementType.type === 'text' || ele.printElementType.type === 'longText')) {
+                      var nextFontSize = Number(n);
+                      if (!isNaN(nextFontSize)) {
+                        var autoBoxSize = nextFontSize + 2;
+                        ele.options.height = autoBoxSize;
+                        ele.options.lineHeight = autoBoxSize;
+                      }
+                    }
+
                     n && "object" == _typeof(n) ? Object.keys(n).forEach(function (e) {
                       ele.options[e] = n[e];
                     }) : ele.options[e.name] = n;
@@ -881,6 +891,16 @@ var hiprint = function (t) {
                 tab.list.forEach(function (e) {
                   var n = e.getValue(), r = 'textType' == e.name && t.options[e.name] !== n,
                     a = 'axis' == e.name && t.options[e.name] !== n;
+
+                  if (e.name === 'fontSize' && t.printElementType && (t.printElementType.type === 'text' || t.printElementType.type === 'longText')) {
+                    var nextFontSizeT = Number(n);
+                    if (!isNaN(nextFontSizeT)) {
+                      var autoBoxSizeT = nextFontSizeT + 2;
+                      t.options.height = autoBoxSizeT;
+                      t.options.lineHeight = autoBoxSizeT;
+                    }
+                  }
+
                   n && "object" == _typeof(n) ? Object.keys(n).forEach(function (e) {
                     t.options[e] = n[e];
                   }) : t.options[e.name] = n;
@@ -906,9 +926,8 @@ var hiprint = function (t) {
               if (a) {
                 t.designTarget.hidraggable('update', {axis: n})
               }
-            });
+            })
           }
-          this.updateDesignViewFromOptions(), hinnn.event.trigger("hiprintTemplateDataChanged_" + this.templateId, "元素修改");
       }, BasePrintElement.prototype.updateOption = function (o, v, b) {
         try {
           var e = this.getConfigOptions();
@@ -923,6 +942,21 @@ var hiprint = function (t) {
             optionKeys = e.supportOptions.map(function (e) {return e.name});
           }
           if (optionKeys && optionKeys.includes(o)) {
+            if (o === 'fontSize' && this.printElementType && (this.printElementType.type === 'text' || this.printElementType.type === 'longText')) {
+              var currentFontSize = Number(this.options.fontSize || 0);
+              var currentHeight = Number(this.options.height || 0);
+              var nextFontSize = Number(v);
+              if (!isNaN(nextFontSize)) {
+                var isDefaultBox = (!currentFontSize && !currentHeight) ||
+                  (currentFontSize === 12 && currentHeight === 14) ||
+                  (currentHeight === currentFontSize + 2);
+                if (isDefaultBox) {
+                  var autoBoxSize = nextFontSize + 2;
+                  this.options.height = autoBoxSize;
+                  this.options.lineHeight = autoBoxSize;
+                }
+              }
+            }
             this.options[o] = v;
             this.updateDesignViewFromOptions();
             if (!b) {

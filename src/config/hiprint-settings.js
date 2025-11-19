@@ -11,8 +11,8 @@ export const hiprintFontList = [
   { title: '標楷體', value: 'DFKai-SB' },
   { title: '新細明體', value: 'PMingLiU' },
   { title: '微軟正黑體', value: 'Microsoft JhengHei' },
-  { title: 'Noto Sans TC', value: 'Noto Sans TC' },
-  { title: 'Source Han Sans', value: 'SourceHanSansCN-Normal' },
+  { title: '思源黑體', value: 'Noto Sans TC' },
+  { title: '思源正黑體', value: 'SourceHanSansCN-Normal' },
 
   // 簡體中文常用
   { title: '宋體 (SimSun)', value: 'SimSun' },

@@ -235,7 +235,8 @@ const openLockPositionModal = (designElement, $target) => {
   const opts = designElement.options
   if (!opts) return
 
-  const currentlyDraggable = opts.draggable !== false
+  const isFixed = opts.fixed === true
+  const currentlyDraggable = !isFixed && opts.draggable !== false
 
   const modalIdBase = `hiprint-lock-${Date.now()}-${Math.random().toString(16).slice(2)}`
   const idLeft = `${modalIdBase}-left`
@@ -335,7 +336,17 @@ const openLockPositionModal = (designElement, $target) => {
     }
 
     const nextDraggable = !lock
+    const nextFixed = !!lock
     opts.draggable = nextDraggable
+    opts.fixed = nextFixed
+    if (typeof designElement.updateOption === 'function') {
+      try {
+        // 使用 hiprint 內建的 updateOption，讓右側屬性面板的「固定」選項也一起更新
+        designElement.updateOption('fixed', nextFixed, true)
+      } catch (e) {
+        // ignore，已經直接寫入 opts.fixed
+      }
+    }
     try {
       $target.hidraggable('update', { draggable: nextDraggable })
     } catch (e) {
@@ -398,18 +409,46 @@ const openTextStyleModal = (designElement) => {
   const idLineHeight = `${modalIdBase}-lineHeight`
   const idRotate = `${modalIdBase}-rotate`
 
-  const currentFontFamily = opts.fontFamily || ''
-  const currentFontSize = opts.fontSize ?? 14
+  const typeFontFamily = designElement.printElementType && designElement.printElementType.fontFamily
+  const currentFontFamily = (opts.fontFamily && opts.fontFamily !== '') ? opts.fontFamily : (typeFontFamily || '')
+  const currentFontSize = opts.fontSize ?? 12
   const currentFontWeight = opts.fontWeight || 'normal'
   const currentLetterSpacing = opts.letterSpacing ?? ''
   const currentColor = opts.color || '#000000'
-  const currentBgColor = opts.backgroundColor || '#ffffff'
+  const hadBgColor = typeof opts.backgroundColor === 'string' && opts.backgroundColor !== ''
+  const currentBgColor = hadBgColor ? opts.backgroundColor : ''
   const currentTextDecoration = opts.textDecoration || ''
   const currentTextAlign = opts.textAlign || ''
   const currentVAlign = opts.textContentVerticalAlign || ''
   const currentTextWrap = opts.textContentWrap || ''
   const currentLineHeight = opts.lineHeight ?? ''
   const currentRotate = opts.transform ?? ''
+  const currentHeight = typeof opts.height === 'number' ? opts.height : 14
+  let bgColorTouched = false
+
+  const fontList = typeof designElement.getFontList === 'function'
+    ? (designElement.getFontList() || hiprintFontList)
+    : hiprintFontList
+
+  const fontSizeOptions = [
+    '', 6, 6.75, 7.5, 8.25, 9, 9.75, 10.5, 11.25, 12, 12.75,
+    13.5, 14.25, 15, 15.75, 16.5, 17.25, 18, 18.75, 19.5,
+    20.25, 21, 21.75
+  ]
+
+  const setOption = (name, value) => {
+    if (!opts) return
+    if (typeof designElement.updateOption === 'function') {
+      try {
+        designElement.updateOption(name, value, true)
+        return
+      } catch (e) {
+        // fallback to direct write
+      }
+    }
+    // 若 updateOption 不存在或失敗，直接寫入 options
+    opts[name] = value
+  }
 
   const contentVNode = h('div', { class: 'text-style-modal' }, [
     // 第 1 行：字體 / 字型大小 / 字體粗細 / 字間距
@@ -424,20 +463,33 @@ const openTextStyleModal = (designElement) => {
           },
           [
             h('option', { value: '', selected: !currentFontFamily }, '預設'),
-            ...hiprintFontList.map((f) =>
-              h('option', { value: f.value, selected: currentFontFamily === f.value }, f.title)
+            ...fontList.map((f) =>
+              h('option', { value: f.value || '', selected: currentFontFamily === f.value }, f.title || f.value || '')
             )
           ]
         )
       ]),
       h('div', { class: 'text-style-field' }, [
         h('span', { class: 'field-label' }, '字型大小(pt)'),
-        h('input', {
-          id: idFontSize,
-          type: 'number',
-          value: currentFontSize,
-          class: 'field-control'
-        })
+        h(
+          'select',
+          {
+            id: idFontSize,
+            class: 'field-control'
+          },
+          fontSizeOptions.map((size) =>
+            size === ''
+              ? h('option', { value: '', selected: !currentFontSize }, '預設')
+              : h(
+                  'option',
+                  {
+                    value: String(size),
+                    selected: Number(currentFontSize) === Number(size)
+                  },
+                  `${size}pt`
+                )
+          )
+        )
       ]),
       h('div', { class: 'text-style-field' }, [
         h('span', { class: 'field-label' }, '字體粗細'),
@@ -476,12 +528,15 @@ const openTextStyleModal = (designElement) => {
         })
       ]),
       h('div', { class: 'text-style-field' }, [
-        h('span', { class: 'field-label' }, '背景顏色'),
+        h('span', { class: 'field-label' }, '背景顏色（預設透明）'),
         h('input', {
           id: idBgColor,
           type: 'color',
           value: currentBgColor,
-          class: 'field-control color-input'
+          class: 'field-control color-input',
+          onInput: () => {
+            bgColorTouched = true
+          }
         })
       ]),
       h('div', { class: 'text-style-field' }, [
@@ -599,18 +654,31 @@ const openTextStyleModal = (designElement) => {
     const nextLineHeight = getNumber(idLineHeight, currentLineHeight)
     const nextRotate = getNumber(idRotate, currentRotate)
 
-    opts.fontFamily = nextFontFamily
-    opts.fontSize = nextFontSize
-    opts.fontWeight = nextFontWeight
-    opts.letterSpacing = nextLetterSpacing
-    opts.color = nextColor
-    opts.backgroundColor = nextBgColor
-    opts.textDecoration = nextTextDecoration
-    opts.textAlign = nextTextAlign
-    opts.textContentVerticalAlign = nextVAlign
-    opts.textContentWrap = nextTextWrap
-    opts.lineHeight = nextLineHeight
-    opts.transform = nextRotate
+    setOption('fontFamily', nextFontFamily)
+    setOption('fontSize', nextFontSize)
+    setOption('fontWeight', nextFontWeight)
+    setOption('letterSpacing', nextLetterSpacing)
+    setOption('color', nextColor)
+    if (!bgColorTouched && !hadBgColor) {
+      delete opts.backgroundColor
+    } else {
+      setOption('backgroundColor', nextBgColor)
+    }
+    setOption('textDecoration', nextTextDecoration)
+    setOption('textAlign', nextTextAlign)
+    setOption('textContentVerticalAlign', nextVAlign)
+    setOption('textContentWrap', nextTextWrap)
+    setOption('lineHeight', nextLineHeight)
+
+    const fontSizeChanged = Number(nextFontSize) !== Number(currentFontSize)
+    const isDefaultBox = Number(currentFontSize) === 12 && Number(currentHeight) === 14
+    if (!Number.isNaN(nextFontSize) && fontSizeChanged && isDefaultBox) {
+      const autoBoxSize = nextFontSize + 2
+      setOption('height', autoBoxSize)
+      setOption('lineHeight', autoBoxSize)
+    }
+
+    setOption('transform', nextRotate)
 
     try {
       if (typeof designElement.updateDesignViewFromOptions === 'function') {
@@ -641,6 +709,19 @@ const openTextStyleModal = (designElement) => {
 const openBorderStyleModal = (designElement) => {
   const opts = designElement.options
   if (!opts) return
+
+  const setOption = (name, value) => {
+    if (!opts) return
+    if (typeof designElement.updateOption === 'function') {
+      try {
+        designElement.updateOption(name, value, true)
+        return
+      } catch (e) {
+        // fallback to direct write
+      }
+    }
+    opts[name] = value
+  }
 
   const modalIdBase = `hiprint-border-${Date.now()}-${Math.random().toString(16).slice(2)}`
   const idBorderLeft = `${modalIdBase}-borderLeft`
@@ -801,16 +882,16 @@ const openBorderStyleModal = (designElement) => {
     const nextPaddingRight = getNumber(idPaddingRight, currentPaddingRight)
     const nextPaddingBottom = getNumber(idPaddingBottom, currentPaddingBottom)
 
-    opts.borderLeft = nextBorderLeft
-    opts.borderTop = nextBorderTop
-    opts.borderRight = nextBorderRight
-    opts.borderBottom = nextBorderBottom
-    opts.borderWidth = nextBorderWidth
-    opts.borderColor = nextBorderColor
-    opts.contentPaddingLeft = nextPaddingLeft
-    opts.contentPaddingTop = nextPaddingTop
-    opts.contentPaddingRight = nextPaddingRight
-    opts.contentPaddingBottom = nextPaddingBottom
+    setOption('borderLeft', nextBorderLeft)
+    setOption('borderTop', nextBorderTop)
+    setOption('borderRight', nextBorderRight)
+    setOption('borderBottom', nextBorderBottom)
+    setOption('borderWidth', nextBorderWidth)
+    setOption('borderColor', nextBorderColor)
+    setOption('contentPaddingLeft', nextPaddingLeft)
+    setOption('contentPaddingTop', nextPaddingTop)
+    setOption('contentPaddingRight', nextPaddingRight)
+    setOption('contentPaddingBottom', nextPaddingBottom)
 
     try {
       if (typeof designElement.updateDesignViewFromOptions === 'function') {
@@ -955,6 +1036,7 @@ const initDesigner = () => {
 
   hiprintTemplate = new hiprint.PrintTemplate({
     template: panel,
+    fontList: hiprintFontList,
     settingContainer: '#PrintElementOptionSetting',
     paginationContainer: '.hiprint-printPagination',
     history: true,

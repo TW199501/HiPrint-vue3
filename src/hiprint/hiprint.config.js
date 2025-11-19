@@ -455,8 +455,10 @@
       ],
       default: {
         width: 120,
-        height: 9.75,
+        height: 14,
         fontFamily: 'DFKai-SB',
+        fontSize: 12,
+        lineHeight: 14,
         // barAutoWidth: 'true' 这里必须使用字符串
       }
     },
@@ -597,7 +599,12 @@
           hidden: false
         }
       ],
-      default: {}
+      default: {
+        height: 42,
+        width: 550,
+        fontFamily: 'DFKai-SB',
+        fontSize: 12
+      }
     },
     longText: {
       tabs: [
@@ -867,7 +874,8 @@
       default: {
         height: 42,
         width: 550,
-        fontFamily: 'DFKai-SB'
+        fontFamily: 'DFKai-SB',
+        fontSize: 12
       }
     },
     table: {
