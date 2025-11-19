@@ -431,9 +431,8 @@ const openTextStyleModal = (designElement) => {
     : hiprintFontList
 
   const fontSizeOptions = [
-    '', 6, 6.75, 7.5, 8.25, 9, 9.75, 10.5, 11.25, 12, 12.75,
-    13.5, 14.25, 15, 15.75, 16.5, 17.25, 18, 18.75, 19.5,
-    20.25, 21, 21.75
+    '', 8, 9, 10, 11, 12,
+    14, 16, 18, 20, 22, 24, 26, 28, 36
   ]
 
   const setOption = (name, value) => {

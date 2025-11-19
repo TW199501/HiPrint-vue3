@@ -189,6 +189,7 @@
         border: 1px solid #bdc3c7;
         -moz-border-radius: 2px;
         -webkit-border-radius: 2px;
+        border-radius: 2px;
         display: block;
         float: left;
         padding: 5px;
@@ -227,13 +228,20 @@
     line-height: 1.5;
 }
 /*rect-printElement-type hiprint-printElement-type */
-.rect-printElement-types .hiprint-printElement-type {
-    display: block;
+.rect-printElement-types .hiprint-gridColumnsFooter {
+  text-align: left;
+  clear: both;
 }
 
-.rect-printElement-types .hiprint-printElement-type {
-    padding: 0 0 0 0;
-    list-style: none;
+/* 文字上下對齊（設計時使用） */
+.hiprint-text-content-middle > div {
+  display: grid;
+  align-items: center;
+}
+
+.hiprint-text-content-bottom > div {
+  display: grid;
+  align-items: flex-end;
 }
 
     .rect-printElement-types .hiprint-printElement-type > li > .title {
@@ -331,9 +339,6 @@
 
 
 /* hiprint-toolbar*/
-
-.hiprint-toolbar {
-}
 
     .hiprint-toolbar > ul {
         padding: 0px;
@@ -734,10 +739,6 @@ font-weight: normal;*/
 
 
 /*hitable reizer*/
-.hitable {
-}
-
-
 
     .hitable .selected {
         background: #3e66ad;

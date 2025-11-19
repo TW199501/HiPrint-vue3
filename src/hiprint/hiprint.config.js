@@ -459,6 +459,7 @@
         fontFamily: 'DFKai-SB',
         fontSize: 12,
         lineHeight: 14,
+        textContentVerticalAlign: 'middle',
         // barAutoWidth: 'true' 这里必须使用字符串
       }
     },

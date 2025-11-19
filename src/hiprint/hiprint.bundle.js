@@ -928,6 +928,13 @@ var hiprint = function (t) {
               }
             })
           }
+          if (els && els.length) {
+            els.forEach(function (ele) {
+              ele.updateDesignViewFromOptions();
+            });
+          } else {
+            t.updateDesignViewFromOptions();
+          }
       }, BasePrintElement.prototype.updateOption = function (o, v, b) {
         try {
           var e = this.getConfigOptions();
@@ -943,18 +950,11 @@ var hiprint = function (t) {
           }
           if (optionKeys && optionKeys.includes(o)) {
             if (o === 'fontSize' && this.printElementType && (this.printElementType.type === 'text' || this.printElementType.type === 'longText')) {
-              var currentFontSize = Number(this.options.fontSize || 0);
-              var currentHeight = Number(this.options.height || 0);
               var nextFontSize = Number(v);
               if (!isNaN(nextFontSize)) {
-                var isDefaultBox = (!currentFontSize && !currentHeight) ||
-                  (currentFontSize === 12 && currentHeight === 14) ||
-                  (currentHeight === currentFontSize + 2);
-                if (isDefaultBox) {
-                  var autoBoxSize = nextFontSize + 2;
-                  this.options.height = autoBoxSize;
-                  this.options.lineHeight = autoBoxSize;
-                }
+                var autoBoxSize = nextFontSize + 2;
+                this.options.height = autoBoxSize;
+                this.options.lineHeight = autoBoxSize;
               }
             }
             this.options[o] = v;
@@ -2384,7 +2384,7 @@ var hiprint = function (t) {
 
         return null;
       }, t.prototype.createTarget = function () {
-        return this.target = $(`<div class="hiprint-option-item">\n        <div class="hiprint-option-item-label">\n        ${i18n.__('字体大小')}\n        </div>\n        <div class="hiprint-option-item-field">\n        <select class="auto-submit">\n        <option value="" >${i18n.__('默认')}</option>\n        <option value="6" >6pt</option>\n        <option value="6.75" >6.75pt</option>\n        <option value="7.5" >7.5pt</option>\n        <option value="8.25" >8.25pt</option>\n        <option value="9" >9pt</option>\n        <option value="9.75" >9.75pt</option>\n        <option value="10.5" >10.5pt</option>\n        <option value="11.25" >11.25pt</option>\n        <option value="12" >12pt</option>\n        <option value="12.75" >12.75pt</option>\n        <option value="13.5" >13.5pt</option>\n        <option value="14.25" >14.25pt</option>\n        <option value="15" >15pt</option>\n        <option value="15.75" >15.75pt</option>\n        <option value="16.5" >16.5pt</option>\n        <option value="17.25" >17.25pt</option>\n        <option value="18" >18pt</option>\n        <option value="18.75" >18.75pt</option>\n        <option value="19.5" >19.5pt</option>\n        <option value="20.25" >20.25pt</option>\n        <option value="21" >21pt</option>\n        <option value="21.75" >21.75pt</option>\n        </select>\n        </div>\n    </div>`), this.target;
+        return this.target = $(`<div class="hiprint-option-item">\n        <div class="hiprint-option-item-label">\n        ${i18n.__('字体大小')}\n        </div>\n        <div class="hiprint-option-item-field">\n        <select class="auto-submit">\n        <option value="" >${i18n.__('默认')}</option>\n        <option value="8" >8pt</option>\n        <option value="9" >9pt</option>\n        <option value="10" >10pt</option>\n        <option value="11" >11pt</option>\n        <option value="12" >12pt</option>\n        <option value="14" >14pt</option>\n        <option value="16" >16pt</option>\n        <option value="18" >18pt</option>\n        <option value="20" >20pt</option>\n        <option value="22" >22pt</option>\n        <option value="24" >24pt</option>\n        <option value="26" >26pt</option>\n        <option value="28" >28pt</option>\n        <option value="36" >36pt</option>\n        </select>\n        </div>\n    </div>`), this.target;
       }, t.prototype.getValue = function () {
         var t = this.target.find("select").val();
         if (t) return parseFloat(t.toString());
@@ -8743,7 +8743,13 @@ var hiprint = function (t) {
         if (this.designTarget) {
           var t = this.getData(),
             e = this.getHtml(this.designPaper)[0].target;
-          this.designTarget.find(".hiprint-printElement-longText-content").html(e.find(".hiprint-printElement-longText-content").html()), this.css(this.designTarget, t);
+          this.designTarget.find(".hiprint-printElement-longText-content").html(e.find(".hiprint-printElement-longText-content").html()), this.css(this.designTarget, t), this.updateTargetSize(this.designTarget);
+          var style = this.designTarget[0] && this.designTarget[0].style;
+          var sizeBox = this.designTarget.find(".size-box");
+          if (sizeBox && sizeBox.length && style && style.width && style.height) {
+            sizeBox.text(style.width + " x " + style.height);
+            sizeBox.css("top", -(sizeBox.outerHeight() || 20));
+          }
         }
       }, e.prototype.getConfigOptions = function () {
         return p.a.instance.longText;
@@ -8991,7 +8997,31 @@ var hiprint = function (t) {
         // })
         if (this.designTarget) {
           var t = this.getData();
-          this.css(this.designTarget, t), this.updateTargetText(this.designTarget, this.getTitle(), t);
+          this.css(this.designTarget, t), this.updateTargetSize(this.designTarget);
+          var style = this.designTarget[0] && this.designTarget[0].style;
+          var sizeBox = this.designTarget.find(".size-box");
+          if (sizeBox && sizeBox.length && style && style.width && style.height) {
+            sizeBox.text(style.width + " x " + style.height);
+            sizeBox.css("top", -(sizeBox.outerHeight() || 20));
+          }
+          var optionTabs = this._printElementOptionTabs;
+          if (optionTabs && optionTabs.length) {
+            var self = this;
+            optionTabs.forEach(function (tab) {
+              if (tab.list && tab.list.length) {
+                tab.list.forEach(function (item) {
+                  if (item.name === "widthHeight" && item.target) {
+                    var inputs = item.target.find("input");
+                    if (inputs && inputs.length >= 2) {
+                      inputs.eq(0).val(self.options.width);
+                      inputs.eq(1).val(self.options.height);
+                    }
+                  }
+                });
+              }
+            });
+          }
+          this.updateTargetText(this.designTarget, this.getTitle(), t);
         }
       }, e.prototype.getConfigOptions = function () {
         return p.a.instance.text;
